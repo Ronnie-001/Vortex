@@ -1,4 +1,4 @@
-package vortexkv
+package vortex
 
 import "fmt"
 

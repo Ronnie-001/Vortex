@@ -1,2 +1,2 @@
 # Vortex
-A distributed key-value store written in Golang, focusing on speed and scalability.
+A distributed task-scheduler written in Golang, focusing on speed and scalability.
