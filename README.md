@@ -1,5 +1,5 @@
 # Vortex
-A distributed task-scheduler written in Golang, focusing on speed and scalability.
+A distributed task-scheduler written in Golang, focusing on performance and scalability.
 
 <p align="center">
   <img src="assets/vortex_logo.png" alt="Vortex Logo" width="425">
