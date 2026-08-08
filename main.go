@@ -1,3 +1,4 @@
+// Package vortex is main
 package vortex
 
 import "fmt"
