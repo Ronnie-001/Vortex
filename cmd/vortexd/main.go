@@ -5,7 +5,9 @@ import (
 	"log"
 	"net"
 
+	"vortex/internal/configs"
 	pb "vortex/proto/v1"
+
 	"google.golang.org/grpc"
 )
 
@@ -22,6 +24,10 @@ func (s *server) SayHelloAgain(cxt context.Context, req *pb.HelloRequest) (*pb.H
 }
 
 func main() {
+
+	// Create new db session
+	session, _ = configs.NewSession()
+
 	// Open the connection
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {
