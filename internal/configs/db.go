@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/apache/cassandra-gocql-driver/v2"
 )
@@ -20,8 +20,15 @@ func NewSession() (*DB, error) {
 	cluster := gocql.NewCluster(ipAddrs[:]...)
 	session, err := cluster.CreateSession()
 	if err != nil {
-		log.Fatalf("[ERROR] Failed to create new cassandra session: %v", err)
+		return nil, fmt.Errorf("[ERROR] Failed to create new cassandra session: %v", err)
 	}
 
+
 	return &DB{dbSession: session}, nil
+}
+
+func (d *DB) Close() {
+	if d.dbSession != nil {
+		d.dbSession.Close()
+	}
 }
