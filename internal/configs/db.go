@@ -8,7 +8,11 @@ import (
 
 var (
 	// The different hosts used for the cassandra cluster.
-	ipAddrs = [...]string{"192.168.1.1", "192.168.1.2", "192.168.1.3"}
+	ipAddrs = [...]string{"192.168.1.1", 
+						  "192.168.1.2", 
+						  "192.168.1.3", 
+						  "192.168.1.4", 
+						  "192.168.1.5"}
 )
 
 // DB Dependency injection; share cassandra session with other services.
@@ -22,7 +26,6 @@ func NewSession() (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Failed to create new cassandra session: %v", err)
 	}
-
 
 	return &DB{dbSession: session}, nil
 }

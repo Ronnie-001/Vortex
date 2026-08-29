@@ -27,7 +27,7 @@ func main() {
 
 	// Create new db session
 	session, _ := configs.NewSession()
-
+	
 	defer session.Close()
 
 	// Open the connection
