@@ -1,0 +1,72 @@
+##########################
+# CASSANDRA DATABASE
+##########################
+apiVersion: k8ssandra.io/v1alpha1
+kind: K8ssandraCluster
+metadata:
+  name: demo
+spec:
+  cassandra:
+    serverVersion: "4.0.1"
+    datacenters:
+      - metadata:
+          name: dc1
+        size: 4
+        storageConfig:
+          cassandraDataVolumeClaimSpec:
+            storageClassName: standard
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 5Gi
+        config:
+          jvmOptions:
+            heapSize: 512M
+  stargate:
+    size: 1
+    heapSize: 256M
+---
+##########################
+# ORCHESTRATOR
+##########################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vortex-orchestrator
+  labels:
+    role: orchestrator
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: orchestrator
+    spec:
+      containers:
+      - name: vortex-orchestrator
+        image: # PUT orchestrator image here!
+        ports:
+          - containerPort: 80
+---
+##########################
+# WORKER
+##########################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vortex-worker
+  labels:
+    role: worker
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - name: vortex-worker
+        image: # PUT worker image here!
+        ports:
+          - containerPort: 80
