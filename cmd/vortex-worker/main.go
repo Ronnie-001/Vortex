@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	pb "vortex/proto/v1"
 
@@ -20,6 +21,8 @@ func main() {
 	}
 
 	defer conn.Close()
+
+	fmt.Println("Vortex worker spawned!")
 	
 	// Create the stub within the client.
 	client := pb.NewGreeterClient(conn)
