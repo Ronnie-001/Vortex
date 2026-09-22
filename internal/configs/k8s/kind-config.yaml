@@ -3,6 +3,7 @@ apiVersion: kind.x-k8s.io/v1alpha4
 name: vortex-cluster-1
 nodes:
 - role: control-plane
-- role: worker
+# At least one worker will be the daemon/orchestrator that sends tosks to the other nodes.
+- role: worker 
 - role: worker
 - role: worker

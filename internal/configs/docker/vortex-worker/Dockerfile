@@ -12,4 +12,4 @@ RUN go mod download
 # Copy over the source code.
 COPY . ./
 
-CMD ["go", "run", "/cmd/vortex-worker/main.go"]
+CMD ["go", "run", "./cmd/vortex-worker/main.go"]

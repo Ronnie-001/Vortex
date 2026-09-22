@@ -1,7 +1,6 @@
 package main
 
-import (
-	"context"
+import ( "context"
 	"fmt"
 	"log"
 	pb "vortex/proto/v1"
@@ -14,8 +13,9 @@ func main() {
 	
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	
-	conn, err := grpc.NewClient(":8080", opts...)
+
+	// Listen in on the vortex service.
+	conn, err := grpc.NewClient("vortexd-service.vortex.svc.cluster.local:80", opts...)
 	if err != nil {
 		log.Fatalf("[ERROR] Unable to create a new gPRC client: %v", err)
 	}

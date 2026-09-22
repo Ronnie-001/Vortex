@@ -30,7 +30,7 @@ func main() {
 	
 	defer session.Close()
 
-	// Open the connection
+	// Open the connection, listens on port 8080
 	lis, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatalf("[ERROR] Unable to start up the TCP server: %v", err)

@@ -1,72 +1,171 @@
-##########################
-# CASSANDRA DATABASE
-##########################
-apiVersion: k8ssandra.io/v1alpha1
-kind: K8ssandraCluster
-metadata:
-  name: demo
-spec:
-  cassandra:
-    serverVersion: "4.0.1"
-    datacenters:
-      - metadata:
-          name: dc1
-        size: 4
-        storageConfig:
-          cassandraDataVolumeClaimSpec:
-            storageClassName: standard
-            accessModes:
-              - ReadWriteOnce
-            resources:
-              requests:
-                storage: 5Gi
-        config:
-          jvmOptions:
-            heapSize: 512M
-  stargate:
-    size: 1
-    heapSize: 256M
----
-##########################
-# ORCHESTRATOR
-##########################
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: vortex-orchestrator
+# =====================================================================
+# 1. CASSANDRA SERVICE
+# =====================================================================
+apiVersion: v1
+kind: Service
+metadata: 
+  name: cassandra-service
+  namespace: vortex
   labels:
-    role: orchestrator
+    app: cassandra-service
 spec:
-  replicas: 1
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9042
+      name: cql
+    - port: 7000
+      name: internode
+    - port: 7001
+      name: tls
+    - port: 7199
+      name: jmx
+  selector:
+    app: cassandra
+---
+# =====================================================================
+# 2. CASSANDRA STATEFULSET
+# =====================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+  namespace: vortex
+  labels:
+    app: cassandra
+spec:
+  serviceName: cassandra-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cassandra
   template:
     metadata:
       labels:
-        app: orchestrator
+        app: cassandra
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: vortex-cluster-1-worker
+      terminationGracePeriodSeconds: 500
       containers:
-      - name: vortex-orchestrator
-        image: # PUT orchestrator image here!
-        ports:
-          - containerPort: 80
+        - name: cassandra
+          image: cassandra:5.0
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 7000
+              name: intra-node
+            - containerPort: 7001
+              name: tls-intra-node
+            - containerPort: 7199
+              name: jmx
+            - containerPort: 9042
+              name: cql
+          resources:
+            limits:
+              memory: "2Gi"
+            requests:
+              memory: "2Gi"
+              cpu: "2000m"
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: CASSANDRA_BROADCAST_ADDRESS
+              value: $(POD_IP)
+            - name: CASSANDRA_BROADCAST_RPC_ADDRESS
+              value: $(POD_IP)
+            - name: CASSANDRA_LISTEN_ADDRESS
+              value: $(POD_IP)
+            - name: CASSANDRA_CLUSTER_NAME
+              value: "vortex_cluster"
+            - name: CASSANDRA_SEEDS
+              value: "cassandra-0.cassandra-service.vortex.svc.cluster.local"
+            - name: JVM_EXTRA_OPTS
+              value: "-Djava.net.preferIPv4Stack=true"
+            - name: MAX_HEAP_SIZE
+              value: "512M"
+            - name: HEAP_NEWSIZE
+              value: "100M"
 ---
-##########################
-# WORKER
-##########################
+# =====================================================================
+# 3. ORCHESTRATOR SERVICE
+# =====================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: vortexd-service
+  namespace: vortex
+spec:
+  selector:
+    app: vortexd
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# =====================================================================
+# 4. ORCHESTRATOR DEPLOYMENT
+# =====================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vortexd
+  namespace: vortex
+  labels:
+    role: vortexd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vortexd
+  template:
+    metadata:
+      labels:
+        app: vortexd
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: vortex-cluster-1-worker
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: vortexd
+          image: ronnie178/vortexd:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CASSANDRA_HOSTS
+              value: "cassandra-service"
+---
+# =====================================================================
+# 5. WORKER DEPLOYMENT
+# =====================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vortex-worker
+  namespace: vortex
   labels:
     role: worker
 spec:
   replicas: 3
+  selector:
+    matchLabels:
+      app: worker
   template:
     metadata:
       labels:
         app: worker
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: vortex-cluster-1-worker
+      terminationGracePeriodSeconds: 30
       containers:
-      - name: vortex-worker
-        image: # PUT worker image here!
-        ports:
-          - containerPort: 80
+        - name: vortex-worker
+          image: ronnie178/vortex-worker:latest
+          imagePullPolicy: Always
+          env:
+            - name: VORTEXD_ENDPOINT
+              value: "vortexd-service:80"
+            - name: CASSANDRA_HOSTS
+              value: "cassandra-service"

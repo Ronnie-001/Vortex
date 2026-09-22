@@ -12,4 +12,6 @@ RUN go mod download
 # Copy over the source code.
 COPY . ./
 
-CMD ["go", "run", "/cmd/vortexd/main.go"]
+EXPOSE 8080
+
+CMD ["go", "run", "./cmd/vortexd/main.go"]
